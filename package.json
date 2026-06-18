@@ -1,0 +1,8 @@
+{
+  "name": "caoshu-linkup-game",
+  "version": "1.0.0",
+  "description": "行草连连看小游戏",
+  "scripts": {
+    "start": "npx http-server -p 3000 -d false"
+  }
+}
