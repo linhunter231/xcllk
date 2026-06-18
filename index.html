@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行草連連看</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>行草連連看</h1>
+            <div class="game-controls">
+                <label for="grid-size">网格大小:</label>
+                <select id="grid-size">
+                    <option value="4">4 × 4 (16块)</option>
+                    <option value="6" selected>6 × 6 (36块)</option>
+                    <option value="8">8 × 8 (64块)</option>
+                    <option value="10">10 × 10 (100块)</option>
+                </select>
+                <label for="difficulty">难度:</label>
+                <select id="difficulty">
+                    <option value="1" selected>一级字 (3500常用字)</option>
+                    <option value="2">二级字 (7000字)</option>
+                    <option value="3">三级字 (16000字)</option>
+                </select>
+            </div>
+            <div class="game-info">
+                <div class="score">分数: <span id="score">0</span></div>
+                <div class="time">时间: <span id="time">00:00</span></div>
+            </div>
+        </header>
+        
+        <main class="game-board">
+            <div id="grid-container"></div>
+        </main>
+        
+        <footer class="game-controls">
+            <button id="restart-btn">重新开始</button>
+            <button id="hint-btn">提示</button>
+            <button id="shuffle-btn">打乱</button>
+        </footer>
+        
+        <div id="game-over-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="modal-title">游戏结束</h2>
+                <p id="modal-message">最终得分: 0</p>
+                <button id="modal-restart-btn">再来一局</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="chars.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
