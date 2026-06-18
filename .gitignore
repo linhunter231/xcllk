@@ -1,4 +1,28 @@
+# Dependencies
+node_modules/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Log files
+*.log
+npm-debug.log*
+
+# Font files that can be generated from source
 *.woff
 *.woff2
-.DS_Store
-node_modules/
+
+# Temp and development files
+*.txt
+!cjk_segments.txt
+
+# Deployment scripts (optional - can include or exclude)
+# deploy.bat
+# deploy.ps1

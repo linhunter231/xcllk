@@ -10,6 +10,7 @@ class Game {
         this.isPlaying = false;
         this.hintTiles = [];
         this.gridSize = 6;
+        this.charLevel = 1;
         
         this.gridContainer = document.getElementById('grid-container');
         this.scoreElement = document.getElementById('score');

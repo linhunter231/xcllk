@@ -1,8 +1,20 @@
 {
   "name": "caoshu-linkup-game",
   "version": "1.0.0",
-  "description": "行草连连看小游戏",
+  "description": "行草连连看小游戏 - 按《通用规范汉字表》分级的汉字连连看游戏",
   "scripts": {
-    "start": "npx http-server -p 3000 -d false"
-  }
+    "start": "npx http-server -p 3000 -d false",
+    "dev": "npx http-server -p 8080 -c-1 -o",
+    "verify": "node check_chars.js",
+    "deploy": "git add -A && git commit -m \"update: 最新代码\" && git push"
+  },
+  "keywords": [
+    "game",
+    "chinese",
+    "liankan",
+    "linkup",
+    "caoshu"
+  ],
+  "author": "",
+  "license": "MIT"
 }
