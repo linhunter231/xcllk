@@ -7,7 +7,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
+    <div id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-title">行草連連看</div>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+            <div class="loading-text" id="loading-text">正在加载字体...</div>
+        </div>
+    </div>
+    <div class="game-container hidden" id="game-container">
         <header class="game-header">
             <h1>行草連連看</h1>
             <div class="game-controls top-controls">

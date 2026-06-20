@@ -1,5 +1,51 @@
 // 字库由 chars.js 提供
 
+// ===================== 字体加载管理 =====================
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingProgress = document.getElementById('loading-progress');
+const loadingText = document.getElementById('loading-text');
+const gameContainer = document.getElementById('game-container');
+
+function setProgress(percent, text) {
+    loadingProgress.style.width = percent + '%';
+    if (text) loadingText.textContent = text;
+}
+
+function hideLoading() {
+    loadingOverlay.classList.add('hidden');
+    gameContainer.classList.remove('hidden');
+}
+
+async function waitForFonts() {
+    setProgress(10, '正在加载字体...');
+    
+    // 等待草书字体加载
+    try {
+        await document.fonts.load('48px Caoshu');
+        setProgress(60, '字体加载中...');
+        
+        // 检查字体是否真的加载成功
+        const fontsLoaded = document.fonts.check('48px Caoshu');
+        if (fontsLoaded) {
+            setProgress(100, '加载完成!');
+        } else {
+            // 如果字体文件不存在或加载失败，等待一段时间后继续
+            setProgress(100, '使用备用字体...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    } catch (e) {
+        console.warn('字体加载异常:', e);
+        setProgress(100, '使用备用字体...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // 等待 opencc-js 初始化
+    setProgress(100, '初始化完成!');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    hideLoading();
+}
+
 class Game {
     constructor() {
         this.grid = [];
@@ -52,7 +98,10 @@ class Game {
             this.restart();
         });
         
-        this.startGame();
+        // 等待字体加载完成后再开始游戏
+        waitForFonts().then(() => {
+            this.startGame();
+        });
     }
     
     get GRID_ROWS() {
