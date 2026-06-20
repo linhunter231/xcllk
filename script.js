@@ -312,38 +312,37 @@ class Game {
     
     drawPath(path) {
         const board = document.querySelector('.game-board');
+        const boardRect = board.getBoundingClientRect();
         const grid = document.getElementById('grid-container');
         const gridRect = grid.getBoundingClientRect();
-        const boardRect = board.getBoundingClientRect();
         
-        // 根据实际渲染的第一个 tile 计算尺寸，避免硬编码 60
         const firstTile = grid.querySelector('.tile');
-        const isMobile = window.innerWidth <= 768;
         let tileSize = 60;
         let gap = 8;
-        let padding = 15;
         if (firstTile) {
             const tileRect = firstTile.getBoundingClientRect();
             tileSize = tileRect.width;
             const computedStyle = getComputedStyle(grid);
-            gap = parseFloat(computedStyle.gap) || (isMobile ? 4 : 8);
-            padding = parseFloat(computedStyle.paddingLeft) || (isMobile ? 8 : 12);
-        } else {
-            gap = isMobile ? 4 : 8;
-            padding = isMobile ? 8 : 12;
+            gap = parseFloat(computedStyle.gap) || 8;
         }
+        const padding = (gridRect.width - this.GRID_COLS * tileSize - (this.GRID_COLS - 1) * gap) / 2;
         
         const gridLeftInBoard = gridRect.left - boardRect.left;
         const gridTopInBoard = gridRect.top - boardRect.top;
         
-        const cellCenter = (index) => padding + index * (tileSize + gap) + tileSize / 2;
+        const getCellCenter = (row, col) => {
+            const x = gridLeftInBoard + padding + col * (tileSize + gap) + tileSize / 2;
+            const y = gridTopInBoard + padding + row * (tileSize + gap) + tileSize / 2;
+            return { x, y };
+        };
         
         const points = [];
         path.forEach(tile => {
-            points.push({
-                x: gridLeftInBoard + cellCenter(tile.col),
-                y: gridTopInBoard + cellCenter(tile.row)
-            });
+            if (tile.row !== undefined && tile.col !== undefined) {
+                points.push(getCellCenter(tile.row, tile.col));
+            } else {
+                points.push({ x: 0, y: 0 });
+            }
         });
         
         let svg = board.querySelector('svg');
