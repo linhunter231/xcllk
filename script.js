@@ -506,7 +506,10 @@ class Game {
         
         // 检查是否还有可连接的配对，没有则自动打乱
         if (!this.hasValidPair()) {
-            this.shuffle();
+            this.showMessage('没有可连接的字了，正在打乱顺序...');
+            setTimeout(() => {
+                this.shuffle();
+            }, 500);
         }
         
         this.checkWin();
@@ -632,6 +635,60 @@ class Game {
             this.selectedTile.element.classList.remove('selected');
             this.selectedTile = null;
         }
+    }
+    
+    showMessage(text) {
+        const existingMsg = document.getElementById('game-message');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        const msg = document.createElement('div');
+        msg.id = 'game-message';
+        msg.textContent = text;
+        msg.style.cssText = `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 10000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border: 3px solid white;
+            text-align: center;
+            pointer-events: none;
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOutMsg {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                25% { transform: translate(-50%, -50%) scale(1); }
+                75% { opacity: 1; }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            }
+            #game-message {
+                animation: fadeInOutMsg 2s ease forwards;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.body.appendChild(msg);
+        
+        setTimeout(() => {
+            if (msg.parentNode) {
+                msg.parentNode.removeChild(msg);
+            }
+            if (style.parentNode) {
+                style.parentNode.removeChild(style);
+            }
+        }, 2000);
     }
     
     startTimer() {
