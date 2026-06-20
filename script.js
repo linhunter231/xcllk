@@ -403,7 +403,36 @@ class Game {
         this.score += 100;
         this.updateScore();
         
+        // 检查是否还有可连接的配对，没有则自动打乱
+        if (!this.hasValidPair()) {
+            this.shuffle();
+        }
+        
         this.checkWin();
+    }
+    
+    // 检查是否还有可连接的配对
+    hasValidPair() {
+        const tiles = [];
+        for (let row = 0; row < this.GRID_ROWS; row++) {
+            for (let col = 0; col < this.GRID_COLS; col++) {
+                if (!this.grid[row][col].matched) {
+                    tiles.push(this.grid[row][col]);
+                }
+            }
+        }
+        
+        for (let i = 0; i < tiles.length; i++) {
+            for (let j = i + 1; j < tiles.length; j++) {
+                if (tiles[i].char === tiles[j].char && tiles[i].isCaoshu !== tiles[j].isCaoshu) {
+                    const path = this.findPath(tiles[i], tiles[j]);
+                    if (path) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
     
     checkWin() {
