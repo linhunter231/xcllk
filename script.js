@@ -42,6 +42,13 @@ class Game {
             this.stopTimer();
             this.startGame();
         });
+        // 响应式：窗口尺寸变化时重新计算方块大小
+        window.addEventListener('resize', () => {
+            if (!this.isPlaying && this.grid.length === 0) return;
+            const tileSize = this.calcTileSize();
+            this.gridContainer.style.gridTemplateColumns = `repeat(${this.GRID_COLS}, ${tileSize}px)`;
+            this.gridContainer.style.setProperty('--tile-size', tileSize + 'px');
+        });
         this.modalRestartBtn.addEventListener('click', () => {
             this.modal.classList.add('hidden');
             this.restart();
@@ -58,6 +65,21 @@ class Game {
         return this.gridSize;
     }
     
+    calcTileSize() {
+        const container = this.gridContainer;
+        const parentWidth = container.parentElement ? container.parentElement.clientWidth : window.innerWidth;
+        const availableWidth = Math.min(parentWidth - 20, window.innerWidth - 20);
+        const isMobile = window.innerWidth <= 768;
+        const padding = isMobile ? 16 : 24;
+        const gap = isMobile ? 4 : 8;
+        const cols = this.GRID_COLS;
+        const totalGap = gap * (cols - 1);
+        const computed = Math.floor((availableWidth - padding - totalGap) / cols);
+        const maxSize = isMobile ? 70 : 80;
+        const minSize = isMobile ? 30 : 50;
+        return Math.max(minSize, Math.min(maxSize, computed));
+    }
+
     startGame() {
         this.score = 0;
         this.time = 0;
@@ -96,7 +118,9 @@ class Game {
         
         this.grid = [];
         this.gridContainer.innerHTML = '';
-        this.gridContainer.style.gridTemplateColumns = `repeat(${this.GRID_COLS}, 60px)`;
+        const tileSize = this.calcTileSize();
+        this.gridContainer.style.gridTemplateColumns = `repeat(${this.GRID_COLS}, ${tileSize}px)`;
+        this.gridContainer.style.setProperty('--tile-size', tileSize + 'px');
         
         for (let row = 0; row < this.GRID_ROWS; row++) {
             const rowArray = [];
@@ -292,9 +316,22 @@ class Game {
         const gridRect = grid.getBoundingClientRect();
         const boardRect = board.getBoundingClientRect();
         
-        const tileSize = 60;
-        const gap = 8;
-        const padding = 15;
+        // 根据实际渲染的第一个 tile 计算尺寸，避免硬编码 60
+        const firstTile = grid.querySelector('.tile');
+        const isMobile = window.innerWidth <= 768;
+        let tileSize = 60;
+        let gap = 8;
+        let padding = 15;
+        if (firstTile) {
+            const tileRect = firstTile.getBoundingClientRect();
+            tileSize = tileRect.width;
+            const computedStyle = getComputedStyle(grid);
+            gap = parseFloat(computedStyle.gap) || (isMobile ? 4 : 8);
+            padding = parseFloat(computedStyle.paddingLeft) || (isMobile ? 8 : 12);
+        } else {
+            gap = isMobile ? 4 : 8;
+            padding = isMobile ? 8 : 12;
+        }
         
         const gridLeftInBoard = gridRect.left - boardRect.left;
         const gridTopInBoard = gridRect.top - boardRect.top;

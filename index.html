@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>行草連連看</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -10,22 +10,26 @@
     <div class="game-container">
         <header class="game-header">
             <h1>行草連連看</h1>
-            <div class="game-controls">
-                <label for="grid-size">网格大小:</label>
-                <select id="grid-size">
-                    <option value="4">4 × 4 (16块)</option>
-                    <option value="6" selected>6 × 6 (36块)</option>
-                    <option value="8">8 × 8 (64块)</option>
-                    <option value="10">10 × 10 (100块)</option>
-                </select>
-                <label for="difficulty">字库:</label>
-                <select id="difficulty">
-                    <option value="1" selected>一级 (3500常用字)</option>
-                    <option value="2">二级 (6500字: 一级+二级)</option>
-                    <option value="3">三级 (8105字: 全字库)</option>
-                    <option value="4">草诀谱 (草书学习精选)</option>
-                    <option value="5">书谱 (孙过庭书法理论)</option>
-                </select>
+            <div class="game-controls top-controls">
+                <div class="control-row">
+                    <label for="grid-size">网格:</label>
+                    <select id="grid-size">
+                        <option value="4">4×4</option>
+                        <option value="6" selected>6×6</option>
+                        <option value="8">8×8</option>
+                        <option value="10">10×10</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label for="difficulty">字库:</label>
+                    <select id="difficulty">
+                        <option value="1" selected>一级</option>
+                        <option value="2">二级</option>
+                        <option value="3">三级</option>
+                        <option value="4">草诀谱</option>
+                        <option value="5">书谱</option>
+                    </select>
+                </div>
             </div>
             <div class="game-info">
                 <div class="score">分数: <span id="score">0</span></div>
@@ -37,7 +41,7 @@
             <div id="grid-container"></div>
         </main>
         
-        <footer class="game-controls">
+        <footer class="game-controls bottom-controls">
             <button id="restart-btn">重新开始</button>
             <button id="hint-btn">提示</button>
             <button id="shuffle-btn">打乱</button>
