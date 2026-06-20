@@ -45,9 +45,7 @@ class Game {
         // 响应式：窗口尺寸变化时重新计算方块大小
         window.addEventListener('resize', () => {
             if (!this.isPlaying && this.grid.length === 0) return;
-            const tileSize = this.calcTileSize();
-            this.gridContainer.style.gridTemplateColumns = `repeat(${this.GRID_COLS}, ${tileSize}px)`;
-            this.gridContainer.style.setProperty('--tile-size', tileSize + 'px');
+            this.adjustTileSize();
         });
         this.modalRestartBtn.addEventListener('click', () => {
             this.modal.classList.add('hidden');
@@ -66,18 +64,36 @@ class Game {
     }
     
     calcTileSize() {
-        const container = this.gridContainer;
-        const parentWidth = container.parentElement ? container.parentElement.clientWidth : window.innerWidth;
-        const availableWidth = Math.min(parentWidth - 20, window.innerWidth - 20);
         const isMobile = window.innerWidth <= 768;
-        const padding = isMobile ? 16 : 24;
-        const gap = isMobile ? 4 : 8;
+        const isLargeGrid = this.gridSize >= 10;
+        
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
         const cols = this.GRID_COLS;
-        const totalGap = gap * (cols - 1);
-        const computed = Math.floor((availableWidth - padding - totalGap) / cols);
-        const maxSize = isMobile ? 70 : 80;
-        const minSize = isMobile ? 30 : 50;
-        return Math.max(minSize, Math.min(maxSize, computed));
+        const rows = this.GRID_ROWS;
+        
+        const gap = isMobile ? 2 : 4;
+        const totalGapX = gap * (cols - 1);
+        const totalGapY = gap * (rows - 1);
+        
+        const containerPadding = 10 * 2;
+        const gridPadding = 8 * 2;
+        
+        const estimatedHeaderHeight = isMobile ? 80 : 90;
+        const estimatedFooterHeight = isMobile ? 50 : 60;
+        const totalNonGridHeight = estimatedHeaderHeight + estimatedFooterHeight;
+        
+        const availableWidth = viewportWidth - containerPadding - gridPadding;
+        const availableHeight = viewportHeight - containerPadding - gridPadding - totalNonGridHeight;
+        
+        const tileSizeByWidth = Math.floor((availableWidth - totalGapX) / cols);
+        const tileSizeByHeight = Math.floor((availableHeight - totalGapY) / rows);
+        
+        const maxSize = isMobile ? 55 : (isLargeGrid ? 40 : 70);
+        const minSize = isMobile ? 20 : 28;
+        
+        return Math.max(minSize, Math.min(maxSize, Math.min(tileSizeByWidth, tileSizeByHeight)));
     }
 
     startGame() {
@@ -90,6 +106,42 @@ class Game {
         
         this.createGrid();
         this.startTimer();
+        
+        setTimeout(() => this.adjustTileSize(), 100);
+    }
+    
+    adjustTileSize() {
+        const board = document.querySelector('.game-board');
+        const container = document.querySelector('.game-container');
+        if (!board || !container) return;
+        
+        const boardRect = board.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        const isLargeGrid = this.gridSize >= 10;
+        const cols = this.GRID_COLS;
+        const rows = this.GRID_ROWS;
+        const gap = 4;
+        
+        const totalGapX = gap * (cols - 1);
+        const totalGapY = gap * (rows - 1);
+        const padding = 16;
+        
+        const availableWidth = boardRect.width - padding * 2;
+        const availableHeight = boardRect.height - padding * 2;
+        
+        const tileSizeByWidth = Math.floor((availableWidth - totalGapX) / cols);
+        const tileSizeByHeight = Math.floor((availableHeight - totalGapY) / rows);
+        
+        const maxSize = isLargeGrid ? 45 : 70;
+        const minSize = 25;
+        
+        const newSize = Math.max(minSize, Math.min(maxSize, Math.min(tileSizeByWidth, tileSizeByHeight)));
+        
+        if (newSize > 0 && newSize !== parseInt(this.gridContainer.style.getPropertyValue('--tile-size'))) {
+            this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, ${newSize}px)`;
+            this.gridContainer.style.setProperty('--tile-size', newSize + 'px');
+        }
     }
     
     restart() {
