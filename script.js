@@ -504,8 +504,18 @@ class Game {
         this.score += 100;
         this.updateScore();
         
-        // 检查是否还有可连接的配对，没有则自动打乱
-        if (!this.hasValidPair()) {
+        // 检查是否还有未匹配的字
+        let remainingTiles = 0;
+        for (let row = 0; row < this.GRID_ROWS; row++) {
+            for (let col = 0; col < this.GRID_COLS; col++) {
+                if (!this.grid[row][col].matched) {
+                    remainingTiles++;
+                }
+            }
+        }
+        
+        // 只有还有剩余的字但没有可连接的配对时，才提示并打乱
+        if (remainingTiles > 0 && !this.hasValidPair()) {
             this.showMessage('没有可连接的字了，正在打乱顺序...');
             setTimeout(() => {
                 this.shuffle();
