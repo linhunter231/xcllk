@@ -57,6 +57,7 @@ class Game {
         this.hintTiles = [];
         this.gridSize = 6;
         this.charLevel = 1;
+        this.caojueSection = 0;
         
         this.gridContainer = document.getElementById('grid-container');
         this.scoreElement = document.getElementById('score');
@@ -66,15 +67,42 @@ class Game {
         this.shuffleBtn = document.getElementById('shuffle-btn');
         this.gridSizeSelect = document.getElementById('grid-size');
         this.difficultySelect = document.getElementById('difficulty');
+        this.caojueSectionSelect = document.getElementById('caojue-section');
+        this.caojueSectionRow = document.getElementById('caojue-section-row');
         this.modal = document.getElementById('game-over-modal');
         this.modalTitle = document.getElementById('modal-title');
         this.modalMessage = document.getElementById('modal-message');
         this.modalRestartBtn = document.getElementById('modal-restart-btn');
+        this.selectedCharsElement = document.getElementById('selected-chars');
         
         this.init();
     }
     
     init() {
+        this.generateSectionOptions();
+        
+        try {
+            const saved = localStorage.getItem('caoshuLinkupGame');
+            if (saved) {
+                const state = JSON.parse(saved);
+                if (state.gridSize) {
+                    this.gridSize = state.gridSize;
+                    this.gridSizeSelect.value = state.gridSize;
+                }
+                if (state.charLevel) {
+                    this.charLevel = state.charLevel;
+                    this.difficultySelect.value = state.charLevel;
+                }
+                if (state.caojueSection !== undefined) {
+                    this.caojueSection = state.caojueSection;
+                    this.caojueSectionSelect.value = state.caojueSection;
+                }
+            }
+        } catch (e) {}
+        this.charLevel = parseInt(this.difficultySelect.value);
+        this.caojueSection = parseInt(this.caojueSectionSelect.value);
+        this.caojueSectionRow.style.display = this.charLevel === 4 ? 'flex' : 'none';
+        
         this.restartBtn.addEventListener('click', () => this.restart());
         this.hintBtn.addEventListener('click', () => this.showHint());
         this.shuffleBtn.addEventListener('click', () => this.shuffle());
@@ -86,6 +114,13 @@ class Game {
         });
         this.difficultySelect.addEventListener('change', (e) => {
             this.charLevel = parseInt(e.target.value);
+            this.caojueSectionRow.style.display = this.charLevel === 4 ? 'flex' : 'none';
+            this.stopTimer();
+            this.clearSavedGame();
+            this.startGame();
+        });
+        this.caojueSectionSelect.addEventListener('change', (e) => {
+            this.caojueSection = parseInt(e.target.value);
             this.stopTimer();
             this.clearSavedGame();
             this.startGame();
@@ -112,6 +147,28 @@ class Game {
     
     get GRID_COLS() {
         return this.gridSize;
+    }
+    
+    generateSectionOptions() {
+        const totalChars = CAOJUE_CHARS.length;
+        const charsPerSection = 10;
+        const totalSections = Math.ceil(totalChars / charsPerSection);
+        
+        this.caojueSectionSelect.innerHTML = '';
+        
+        const allOption = document.createElement('option');
+        allOption.value = '0';
+        allOption.textContent = '全部';
+        this.caojueSectionSelect.appendChild(allOption);
+        
+        for (let i = 1; i <= totalSections; i++) {
+            const option = document.createElement('option');
+            option.value = i.toString();
+            const start = (i - 1) * charsPerSection + 1;
+            const end = Math.min(i * charsPerSection, totalChars);
+            option.textContent = `第${i}段 (${start}-${end})`;
+            this.caojueSectionSelect.appendChild(option);
+        }
     }
     
     calcTileSize() {
@@ -210,50 +267,136 @@ class Game {
     createGrid() {
         const pairsCount = (this.GRID_ROWS * this.GRID_COLS) / 2;
         const tiles = [];
-        const charPairs = getCharsByLevel(this.charLevel);
         
-        // 根据网格大小决定每个字的重复次数
-        let repeatsPerChar;
-        if (this.gridSize <= 4) {
-            repeatsPerChar = 1;
-        } else if (this.gridSize <= 6) {
-            repeatsPerChar = 2;
-        } else if (this.gridSize <= 8) {
-            repeatsPerChar = 3;
-        } else {
-            repeatsPerChar = 4;
-        }
+        // 获取字库
+        const allCharPairs = getCharsByLevel(this.charLevel, this.caojueSection);
         
-        // 计算需要多少个不同的字才能精确生成 pairsCount 对
-        // 假设选 N 个字，每个字出现 repeatsPerChar 次，就有 N * repeatsPerChar 对
-        // 我们需要 N * repeatsPerChar = pairsCount，即 N = pairsCount / repeatsPerChar
-        let uniqueCharsNeeded = pairsCount / repeatsPerChar;
-        
-        // 如果不是整数，调整 repeatsPerChar 或者 uniqueCharsNeeded
-        if (uniqueCharsNeeded !== Math.floor(uniqueCharsNeeded)) {
-            // 不能整除，重新选择 repeatsPerChar
-            // 找到能整除 pairsCount 的最小 repeatsPerChar
-            for (let r = 1; r <= 5; r++) {
-                if (pairsCount % r === 0) {
-                    repeatsPerChar = r;
-                    uniqueCharsNeeded = pairsCount / r;
-                    break;
-                }
+        // 去重，得到所有不同的字
+        const seen = new Set();
+        const uniquePairs = [];
+        for (const pair of allCharPairs) {
+            if (!seen.has(pair.simplified)) {
+                seen.add(pair.simplified);
+                uniquePairs.push(pair);
             }
         }
         
-        // 随机打乱字库
-        const shuffled = [...charPairs];
-        this.shuffleArray(shuffled);
-        const selectedChars = shuffled.slice(0, uniqueCharsNeeded);
+        // 计算每个字出现的对数
+        const charRepeats = {};
         
-        // 每个字重复 repeatsPerChar 次
-        for (let i = 0; i < uniqueCharsNeeded; i++) {
-            const pair = selectedChars[i];
-            for (let r = 0; r < repeatsPerChar; r++) {
+        const isCaojueSection = this.charLevel === 4 && this.caojueSection > 0;
+        
+        // 计算正常模式下的基准重复次数
+        let baseRepeats;
+        if (this.gridSize <= 4) {
+            baseRepeats = 1;
+        } else if (this.gridSize <= 6) {
+            baseRepeats = 2;
+        } else if (this.gridSize <= 8) {
+            baseRepeats = 3;
+        } else {
+            baseRepeats = 4;
+        }
+        
+        // 工具函数：给定一组字和总对数，按"尽量平均"的方式分配
+        // 每个字至少 minRepeats 对，余数随机分配
+        const assignRepeats = (pairs, totalPairs, minRepeats) => {
+            const result = {};
+            const n = pairs.length;
+            
+            // 每个字至少 minRepeats 对
+            for (const pair of pairs) {
+                result[pair.simplified] = minRepeats;
+            }
+            
+            let remaining = totalPairs - n * minRepeats;
+            
+            if (remaining > 0) {
+                // 完整循环
+                const fullCycles = Math.floor(remaining / n);
+                const remainder = remaining % n;
+                
+                for (const pair of pairs) {
+                    result[pair.simplified] += fullCycles;
+                }
+                
+                // 余数随机分配
+                if (remainder > 0) {
+                    const shuffled = [...pairs];
+                    this.shuffleArray(shuffled);
+                    for (let i = 0; i < remainder; i++) {
+                        result[shuffled[i].simplified]++;
+                    }
+                }
+            }
+            
+            return result;
+        };
+        
+        if (isCaojueSection) {
+            // 草诀谱分段
+            // 正常模式下需要的不同字数
+            const normalUniqueChars = Math.floor(pairsCount / baseRepeats);
+            const threshold = normalUniqueChars * 2;
+            
+            if (uniquePairs.length <= threshold) {
+                // 段内字少
+                if (uniquePairs.length > pairsCount) {
+                    // 段内字比总对数还多：只能随机选 pairsCount 个字，每个1对
+                    const shuffled = [...uniquePairs];
+                    this.shuffleArray(shuffled);
+                    const selected = shuffled.slice(0, pairsCount);
+                    for (const pair of selected) {
+                        charRepeats[pair.simplified] = 1;
+                    }
+                } else {
+                    // 保证所有字都至少出现1对，剩下的循环分配
+                    Object.assign(charRepeats, assignRepeats(uniquePairs, pairsCount, 1));
+                }
+            } else {
+                // 段内字多：用正常模式，随机选字，每个字重复 baseRepeats 对左右
+                const shuffled = [...uniquePairs];
+                this.shuffleArray(shuffled);
+                const selected = shuffled.slice(0, normalUniqueChars);
+                Object.assign(charRepeats, assignRepeats(selected, pairsCount, baseRepeats));
+            }
+        } else {
+            // 非分段模式
+            const normalUniqueChars = Math.floor(pairsCount / baseRepeats);
+            const shuffled = [...uniquePairs];
+            this.shuffleArray(shuffled);
+            const selected = shuffled.slice(0, normalUniqueChars);
+            Object.assign(charRepeats, assignRepeats(selected, pairsCount, baseRepeats));
+        }
+        
+        // 生成 tiles
+        const charPairMap = {};
+        for (const pair of uniquePairs) {
+            charPairMap[pair.simplified] = pair;
+        }
+        
+        const charCount = {};
+        for (const char in charRepeats) {
+            const repeats = charRepeats[char];
+            const pair = charPairMap[char];
+            charCount[char] = repeats;
+            for (let r = 0; r < repeats; r++) {
                 tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: true });
                 tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: false });
             }
+        }
+        
+        // 显示选中段的文字（草诀谱分段时）
+        if (this.charLevel === 4 && this.caojueSection > 0) {
+            // 显示选中段的原始文字
+            const charsPerSection = 10;
+            const start = (this.caojueSection - 1) * charsPerSection;
+            const end = Math.min(this.caojueSection * charsPerSection, CAOJUE_CHARS.length);
+            const sectionText = CAOJUE_CHARS.substring(start, end);
+            this.selectedCharsElement.innerHTML = `<strong>第${this.caojueSection}段：</strong>${sectionText}`;
+            this.selectedCharsElement.style.display = 'block';
+        } else {
+            this.selectedCharsElement.style.display = 'none';
         }
         
         this.shuffleArray(tiles);
@@ -310,6 +453,7 @@ class Game {
             const state = {
                 gridSize: this.gridSize,
                 charLevel: this.charLevel,
+                caojueSection: this.caojueSection,
                 score: this.score,
                 time: this.time,
                 tiles: tilesData
@@ -326,6 +470,7 @@ class Game {
             if (!saved) return false;
             const state = JSON.parse(saved);
             if (state.gridSize !== this.gridSize || state.charLevel !== this.charLevel) return false;
+            if (state.charLevel === 4 && state.caojueSection !== undefined && state.caojueSection !== this.caojueSection) return false;
             
             this.score = state.score;
             this.time = state.time;

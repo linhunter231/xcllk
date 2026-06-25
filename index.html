@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>行草連連看</title>
-    <link rel="stylesheet" href="style.css?v=20250621c">
+    <link rel="stylesheet" href="style.css?v=20260625c">
 </head>
 <body>
     <div id="loading-overlay">
@@ -39,11 +39,17 @@
                         <option value="5">书谱</option>
                     </select>
                 </div>
+                <div class="control-row" id="caojue-section-row" style="display: none;">
+                    <label for="caojue-section">分段:</label>
+                    <select id="caojue-section">
+                    </select>
+                </div>
             </div>
             <div class="game-info">
                 <div class="score">分数: <span id="score">0</span></div>
                 <div class="time">时间: <span id="time">00:00</span></div>
             </div>
+            <div class="selected-chars" id="selected-chars"></div>
         </header>
         
         <main class="game-board">
@@ -66,7 +72,7 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/bundle.min.js"></script>
-    <script src="chars.js?v=20250117"></script>
-    <script src="script.js?v=20250117"></script>
+    <script src="chars.js?v=20260625c"></script>
+    <script src="script.js?v=20260625c"></script>
 </body>
 </html>
