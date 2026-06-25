@@ -213,8 +213,9 @@ body {
     font-family: 'Caoshu', 'Microsoft YaHei', sans-serif;
     font-size: calc(var(--tile-size, 60px) * 0.5);
     line-height: 1;
-    background: linear-gradient(145deg, #ffffff, #e6e6e6);
-    border: 2px solid #ddd;
+    /* 行草字体 - 淡橙渐变背景 */
+    background: linear-gradient(145deg, #fffbf5, #fff5eb);
+    border: 2px solid #e8c49a;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -223,6 +224,13 @@ body {
 
 .tile-regular {
     font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+    /* 楷书字体 - 淡蓝渐变背景 */
+    background: linear-gradient(145deg, #f8fbff, #f0f5fa);
+    border-color: #b8c9db;
+}
+
+.tile-regular:hover {
+    border-color: #90a8bc;
 }
 
 .tile:hover {

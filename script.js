@@ -81,11 +81,13 @@ class Game {
         this.gridSizeSelect.addEventListener('change', (e) => {
             this.gridSize = parseInt(e.target.value);
             this.stopTimer();
+            this.clearSavedGame();
             this.startGame();
         });
         this.difficultySelect.addEventListener('change', (e) => {
             this.charLevel = parseInt(e.target.value);
             this.stopTimer();
+            this.clearSavedGame();
             this.startGame();
         });
         // 响应式：窗口尺寸变化时重新计算方块大小
@@ -156,6 +158,11 @@ class Game {
         this.createGrid();
         this.startTimer();
         
+        // 尝试加载之前的游戏进度
+        if (this.loadGame()) {
+            this.showMessage('已恢复上次的游戏');
+        }
+        
         setTimeout(() => this.adjustTileSize(), 100);
     }
     
@@ -195,6 +202,7 @@ class Game {
     
     restart() {
         this.stopTimer();
+        this.clearSavedGame();
         this.clearHints();
         this.startGame();
     }
@@ -204,15 +212,48 @@ class Game {
         const tiles = [];
         const charPairs = getCharsByLevel(this.charLevel);
         
-        // 随机选择不重复的汉字
+        // 根据网格大小决定每个字的重复次数
+        let repeatsPerChar;
+        if (this.gridSize <= 4) {
+            repeatsPerChar = 1;
+        } else if (this.gridSize <= 6) {
+            repeatsPerChar = 2;
+        } else if (this.gridSize <= 8) {
+            repeatsPerChar = 3;
+        } else {
+            repeatsPerChar = 4;
+        }
+        
+        // 计算需要多少个不同的字才能精确生成 pairsCount 对
+        // 假设选 N 个字，每个字出现 repeatsPerChar 次，就有 N * repeatsPerChar 对
+        // 我们需要 N * repeatsPerChar = pairsCount，即 N = pairsCount / repeatsPerChar
+        let uniqueCharsNeeded = pairsCount / repeatsPerChar;
+        
+        // 如果不是整数，调整 repeatsPerChar 或者 uniqueCharsNeeded
+        if (uniqueCharsNeeded !== Math.floor(uniqueCharsNeeded)) {
+            // 不能整除，重新选择 repeatsPerChar
+            // 找到能整除 pairsCount 的最小 repeatsPerChar
+            for (let r = 1; r <= 5; r++) {
+                if (pairsCount % r === 0) {
+                    repeatsPerChar = r;
+                    uniqueCharsNeeded = pairsCount / r;
+                    break;
+                }
+            }
+        }
+        
+        // 随机打乱字库
         const shuffled = [...charPairs];
         this.shuffleArray(shuffled);
-        const selectedPairs = shuffled.slice(0, pairsCount);
+        const selectedChars = shuffled.slice(0, uniqueCharsNeeded);
         
-        for (let i = 0; i < pairsCount; i++) {
-            const pair = selectedPairs[i];
-            tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: true });
-            tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: false });
+        // 每个字重复 repeatsPerChar 次
+        for (let i = 0; i < uniqueCharsNeeded; i++) {
+            const pair = selectedChars[i];
+            for (let r = 0; r < repeatsPerChar; r++) {
+                tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: true });
+                tiles.push({ char: pair.simplified, traditional: pair.traditional, isCaoshu: false });
+            }
         }
         
         this.shuffleArray(tiles);
@@ -250,6 +291,68 @@ class Game {
             }
             this.grid.push(rowArray);
         }
+    }
+    
+    saveGame() {
+        try {
+            const tilesData = [];
+            for (let row = 0; row < this.GRID_ROWS; row++) {
+                for (let col = 0; col < this.GRID_COLS; col++) {
+                    const tile = this.grid[row][col];
+                    tilesData.push({
+                        char: tile.char,
+                        traditional: tile.traditional,
+                        isCaoshu: tile.isCaoshu,
+                        matched: tile.matched
+                    });
+                }
+            }
+            const state = {
+                gridSize: this.gridSize,
+                charLevel: this.charLevel,
+                score: this.score,
+                time: this.time,
+                tiles: tilesData
+            };
+            localStorage.setItem('caoshuLinkupGame', JSON.stringify(state));
+        } catch (e) {
+            console.warn('保存游戏失败:', e);
+        }
+    }
+    
+    loadGame() {
+        try {
+            const saved = localStorage.getItem('caoshuLinkupGame');
+            if (!saved) return false;
+            const state = JSON.parse(saved);
+            if (state.gridSize !== this.gridSize || state.charLevel !== this.charLevel) return false;
+            
+            this.score = state.score;
+            this.time = state.time;
+            this.updateScore();
+            this.updateTime();
+            
+            for (let row = 0; row < this.GRID_ROWS; row++) {
+                for (let col = 0; col < this.GRID_COLS; col++) {
+                    const tileData = state.tiles[row * this.GRID_COLS + col];
+                    const tile = this.grid[row][col];
+                    if (tileData.matched) {
+                        tile.matched = true;
+                        if (tile.element) {
+                            tile.element.classList.add('matched');
+                        }
+                    }
+                }
+            }
+            return true;
+        } catch (e) {
+            console.warn('加载游戏失败:', e);
+            return false;
+        }
+    }
+    
+    clearSavedGame() {
+        localStorage.removeItem('caoshuLinkupGame');
     }
     
     shuffleArray(array) {
@@ -417,23 +520,21 @@ class Game {
         const grid = document.getElementById('grid-container');
         const gridRect = grid.getBoundingClientRect();
         
-        const firstTile = grid.querySelector('.tile');
-        let tileSize = 60;
-        let gap = 8;
-        if (firstTile) {
-            const tileRect = firstTile.getBoundingClientRect();
-            tileSize = tileRect.width;
-            const computedStyle = getComputedStyle(grid);
-            gap = parseFloat(computedStyle.gap) || 8;
-        }
+        // 从 CSS 变量获取方块大小，而不是从 DOM 元素
+        const computedStyle = getComputedStyle(grid);
+        const tileSize = parseFloat(computedStyle.getPropertyValue('--tile-size')) || 60;
+        const gap = parseFloat(computedStyle.gap) || 4;
+        const gridPadding = 8;
+        
+        // 动态计算实际 padding
         const padding = (gridRect.width - this.GRID_COLS * tileSize - (this.GRID_COLS - 1) * gap) / 2;
         
         const gridLeftInBoard = gridRect.left - boardRect.left;
         const gridTopInBoard = gridRect.top - boardRect.top;
         
         const getCellCenter = (row, col) => {
-            const x = gridLeftInBoard + padding + col * (tileSize + gap) + tileSize / 2;
-            const y = gridTopInBoard + padding + row * (tileSize + gap) + tileSize / 2;
+            const x = gridLeftInBoard + gridPadding + padding + col * (tileSize + gap) + tileSize / 2;
+            const y = gridTopInBoard + gridPadding + padding + row * (tileSize + gap) + tileSize / 2;
             return { x, y };
         };
         
@@ -503,6 +604,9 @@ class Game {
         
         this.score += 100;
         this.updateScore();
+        
+        // 保存游戏进度
+        this.saveGame();
         
         // 检查是否还有未匹配的字
         let remainingTiles = 0;
