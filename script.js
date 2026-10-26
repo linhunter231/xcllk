@@ -188,8 +188,11 @@ class Game {
         const containerPadding = 10 * 2;
         const gridPadding = 8 * 2;
         
-        const estimatedHeaderHeight = isMobile ? 80 : 90;
-        const estimatedFooterHeight = isMobile ? 50 : 60;
+        const hasSelectedChars = this.charLevel === 4 && this.caojueSection > 0;
+        const selectedCharsHeight = hasSelectedChars ? (isMobile ? 58 : 72) : 0;
+        
+        const estimatedHeaderHeight = isMobile ? (130 + selectedCharsHeight) : (110 + selectedCharsHeight);
+        const estimatedFooterHeight = isMobile ? 60 : 70;
         const totalNonGridHeight = estimatedHeaderHeight + estimatedFooterHeight;
         
         const availableWidth = viewportWidth - containerPadding - gridPadding;
@@ -221,6 +224,7 @@ class Game {
         this.startTimer();
         
         setTimeout(() => this.adjustTileSize(), 100);
+        setTimeout(() => this.adjustTileSize(), 300);
     }
     
     adjustTileSize() {
@@ -427,12 +431,16 @@ class Game {
             this.grid.push(rowArray);
         }
         
-        // 显示选中段的文字（草诀谱分段时）
+        // 显示选中段的文字与释义（草诀谱分段时）
         if (this.charLevel === 4 && this.caojueSection > 0) {
             const charsPerSection = 10;
             const start = (this.caojueSection - 1) * charsPerSection;
             const end = Math.min(this.caojueSection * charsPerSection, CAOJUE_CHARS.length);
-            this.selectedCharsElement.innerHTML = `<strong>第${this.caojueSection}段：</strong>${CAOJUE_CHARS.substring(start, end)}`;
+            const sectionText = CAOJUE_CHARS.substring(start, end);
+            const firstFive = sectionText.substring(0, 5);
+            const lastFive = sectionText.substring(5, 10);
+            const explanation = CAOJUE_EXPLANATIONS[this.caojueSection - 1] || '';
+            this.selectedCharsElement.innerHTML = `<div class="section-title"><strong>第${this.caojueSection}段</strong> · <span class="first-half">${firstFive}</span><span class="second-half">${lastFive}</span></div><div class="section-explanation">${explanation}</div>`;
             this.selectedCharsElement.style.display = 'block';
         } else {
             this.selectedCharsElement.style.display = 'none';
