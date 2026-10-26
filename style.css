@@ -75,7 +75,7 @@
 body {
     font-family: 'Microsoft YaHei', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    height: 100vh;
+    height: 100svh;
     width: 100vw;
     display: flex;
     justify-content: center;
@@ -181,20 +181,42 @@ body {
 }
 
 .selected-chars {
-    margin-top: 8px;
-    padding: 12px 16px;
+    margin-top: 4px;
+    padding: 6px 12px;
     background: rgba(102, 126, 234, 0.1);
-    border-radius: 8px;
-    font-size: 18px;
+    border-radius: 6px;
+    font-size: 15px;
     color: #333;
     text-align: center;
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
-    line-height: 1.8;
-    letter-spacing: 4px;
+    line-height: 1.6;
+    letter-spacing: 3px;
     font-family: 'Microsoft YaHei', 'SimSun', sans-serif;
     display: none;
+    flex-shrink: 0;
+}
+
+.selected-chars .section-title {
+    font-size: 15px;
+    letter-spacing: 3px;
+}
+
+.selected-chars .first-half {
+    margin-right: 16px;
+}
+
+.selected-chars .second-half {
+    margin-left: 16px;
+}
+
+.selected-chars .section-explanation {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #666;
+    letter-spacing: 1px;
+    line-height: 1.5;
 }
 
 .selected-chars strong {
@@ -409,16 +431,18 @@ body {
 /* ===== 响应式布局 - 手机端优化 ===== */
 @media (max-width: 768px) {
     body {
-        padding: 8px;
-        align-items: flex-start;
-        padding-top: 10px;
+        padding: 6px;
+        align-items: stretch;
+        padding-top: 6px;
     }
 
     .game-container {
-        padding: 12px 10px;
-        border-radius: 16px;
+        padding: 10px 8px;
+        border-radius: 12px;
         max-width: 100%;
         width: 100%;
+        height: 100%;
+        max-height: 100%;
     }
 
     .game-header h1 {
@@ -450,8 +474,35 @@ body {
         margin-top: 8px;
     }
 
+    .selected-chars {
+        padding: 4px 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        letter-spacing: 2px;
+        margin-top: 2px;
+    }
+
+    .selected-chars .section-title {
+        font-size: 13px;
+        letter-spacing: 2px;
+    }
+
+    .selected-chars .first-half {
+        margin-right: 10px;
+    }
+
+    .selected-chars .second-half {
+        margin-left: 10px;
+    }
+
+    .selected-chars .section-explanation {
+        margin-top: 2px;
+        font-size: 11px;
+    }
+
     .game-board {
-        margin-bottom: 15px;
+        margin-bottom: 5px;
+        min-height: 0;
     }
 
     #grid-container {

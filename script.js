@@ -188,8 +188,11 @@ class Game {
         const containerPadding = 10 * 2;
         const gridPadding = 8 * 2;
         
-        const estimatedHeaderHeight = isMobile ? 80 : 90;
-        const estimatedFooterHeight = isMobile ? 50 : 60;
+        const hasSelectedChars = this.charLevel === 4 && this.caojueSection > 0;
+        const selectedCharsHeight = hasSelectedChars ? (isMobile ? 58 : 72) : 0;
+        
+        const estimatedHeaderHeight = isMobile ? (130 + selectedCharsHeight) : (110 + selectedCharsHeight);
+        const estimatedFooterHeight = isMobile ? 60 : 70;
         const totalNonGridHeight = estimatedHeaderHeight + estimatedFooterHeight;
         
         const availableWidth = viewportWidth - containerPadding - gridPadding;
@@ -221,6 +224,7 @@ class Game {
         }
         
         setTimeout(() => this.adjustTileSize(), 100);
+        setTimeout(() => this.adjustTileSize(), 300);
     }
     
     adjustTileSize() {
@@ -388,12 +392,14 @@ class Game {
         
         // 显示选中段的文字（草诀谱分段时）
         if (this.charLevel === 4 && this.caojueSection > 0) {
-            // 显示选中段的原始文字
             const charsPerSection = 10;
             const start = (this.caojueSection - 1) * charsPerSection;
             const end = Math.min(this.caojueSection * charsPerSection, CAOJUE_CHARS.length);
             const sectionText = CAOJUE_CHARS.substring(start, end);
-            this.selectedCharsElement.innerHTML = `<strong>第${this.caojueSection}段：</strong>${sectionText}`;
+            const firstFive = sectionText.substring(0, 5);
+            const lastFive = sectionText.substring(5, 10);
+            const explanation = CAOJUE_EXPLANATIONS[this.caojueSection - 1] || '';
+            this.selectedCharsElement.innerHTML = `<div class="section-title"><strong>第${this.caojueSection}段</strong> · <span class="first-half">${firstFive}</span><span class="second-half">${lastFive}</span></div><div class="section-explanation">${explanation}</div>`;
             this.selectedCharsElement.style.display = 'block';
         } else {
             this.selectedCharsElement.style.display = 'none';
@@ -481,6 +487,17 @@ class Game {
                 for (let col = 0; col < this.GRID_COLS; col++) {
                     const tileData = state.tiles[row * this.GRID_COLS + col];
                     const tile = this.grid[row][col];
+                    tile.char = tileData.char;
+                    tile.traditional = tileData.traditional;
+                    tile.isCaoshu = tileData.isCaoshu;
+                    if (tile.element) {
+                        tile.element.textContent = tileData.isCaoshu ? tileData.traditional : tileData.char;
+                        if (tileData.isCaoshu) {
+                            tile.element.classList.remove('tile-regular');
+                        } else {
+                            tile.element.classList.add('tile-regular');
+                        }
+                    }
                     if (tileData.matched) {
                         tile.matched = true;
                         if (tile.element) {
@@ -669,17 +686,16 @@ class Game {
         const computedStyle = getComputedStyle(grid);
         const tileSize = parseFloat(computedStyle.getPropertyValue('--tile-size')) || 60;
         const gap = parseFloat(computedStyle.gap) || 4;
-        const gridPadding = 8;
-        
-        // 动态计算实际 padding
-        const padding = (gridRect.width - this.GRID_COLS * tileSize - (this.GRID_COLS - 1) * gap) / 2;
+        // 直接从 computedStyle 读取实际 padding，避免硬编码和重复计算
+        const paddingLeft = parseFloat(computedStyle.paddingLeft) || 8;
+        const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
         
         const gridLeftInBoard = gridRect.left - boardRect.left;
         const gridTopInBoard = gridRect.top - boardRect.top;
         
         const getCellCenter = (row, col) => {
-            const x = gridLeftInBoard + gridPadding + padding + col * (tileSize + gap) + tileSize / 2;
-            const y = gridTopInBoard + gridPadding + padding + row * (tileSize + gap) + tileSize / 2;
+            const x = gridLeftInBoard + paddingLeft + col * (tileSize + gap) + tileSize / 2;
+            const y = gridTopInBoard + paddingTop + row * (tileSize + gap) + tileSize / 2;
             return { x, y };
         };
         

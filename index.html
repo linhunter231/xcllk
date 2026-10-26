@@ -4,7 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>行草連連看</title>
-    <link rel="stylesheet" href="style.css?v=20260625c">
+    <link rel="stylesheet" href="style.css?v=20260706f">
+    <style>
+        /* 移动端底部按钮兜底样式，确保始终可见 */
+        @media (max-width: 768px) {
+            .bottom-controls {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: sticky;
+                bottom: calc(24px + env(safe-area-inset-bottom, 24px));
+                background: rgba(255, 255, 255, 0.95);
+                padding: 6px 10px;
+                border-radius: 25px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                margin-top: 6px;
+                z-index: 100;
+                flex-shrink: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="loading-overlay">
@@ -32,11 +51,11 @@
                 <div class="control-row">
                     <label for="difficulty">字库:</label>
                     <select id="difficulty">
-                        <option value="1" selected>一级</option>
+                        <option value="4" selected>草诀谱</option>
+                        <option value="5">书谱</option>
+                        <option value="1">一级</option>
                         <option value="2">二级</option>
                         <option value="3">三级</option>
-                        <option value="4">草诀谱</option>
-                        <option value="5">书谱</option>
                     </select>
                 </div>
                 <div class="control-row" id="caojue-section-row" style="display: none;">
@@ -72,7 +91,7 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/bundle.min.js"></script>
-    <script src="chars.js?v=20260625c"></script>
-    <script src="script.js?v=20260625c"></script>
+    <script src="chars.js?v=20260706f"></script>
+    <script src="script.js?v=20260706f"></script>
 </body>
 </html>
