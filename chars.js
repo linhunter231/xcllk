@@ -8,15 +8,14 @@ const TRAD_MAP = {'厂':'廠','儿':'兒','几':'幾','干':'幹','于':'於','�
 // ===================== 使用 opencc-js 进行简繁转换 =====================
 let s2tConverter = null;
 
-// 初始化 opencc-js 转换器
+// 初始化 opencc-js 转换器（Converter 同步返回转换函数）
 function initConverter() {
-    if (typeof OpenCC !== 'undefined') {
-        OpenCC.Converter({ from: 'cn', to: 'tw' }).then(converter => {
-            s2tConverter = converter;
-            console.log('OpenCC 简繁转换器初始化成功');
-        }).catch(err => {
-            console.error('OpenCC 初始化失败:', err);
-        });
+    if (typeof OpenCC === 'undefined') return;
+    try {
+        s2tConverter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+        console.log('OpenCC 简繁转换器初始化成功');
+    } catch (err) {
+        console.error('OpenCC 初始化失败:', err);
     }
 }
 

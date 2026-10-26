@@ -212,13 +212,13 @@ class Game {
         this.updateScore();
         this.updateTime();
         
-        this.createGrid();
-        this.startTimer();
-        
-        // 尝试加载之前的游戏进度
+        // 优先恢复上次的存档，否则重新生成棋盘
         if (this.loadGame()) {
             this.showMessage('已恢复上次的游戏');
+        } else {
+            this.createGrid();
         }
+        this.startTimer();
         
         setTimeout(() => this.adjustTileSize(), 100);
     }
@@ -386,21 +386,12 @@ class Game {
             }
         }
         
-        // 显示选中段的文字（草诀谱分段时）
-        if (this.charLevel === 4 && this.caojueSection > 0) {
-            // 显示选中段的原始文字
-            const charsPerSection = 10;
-            const start = (this.caojueSection - 1) * charsPerSection;
-            const end = Math.min(this.caojueSection * charsPerSection, CAOJUE_CHARS.length);
-            const sectionText = CAOJUE_CHARS.substring(start, end);
-            this.selectedCharsElement.innerHTML = `<strong>第${this.caojueSection}段：</strong>${sectionText}`;
-            this.selectedCharsElement.style.display = 'block';
-        } else {
-            this.selectedCharsElement.style.display = 'none';
-        }
-        
         this.shuffleArray(tiles);
-        
+        this.renderGrid(tiles);
+    }
+    
+    // 根据给定的牌面数据渲染棋盘（用于新开一局和恢复存档）
+    renderGrid(tilesData) {
         this.grid = [];
         this.gridContainer.innerHTML = '';
         const tileSize = this.calcTileSize();
@@ -410,22 +401,23 @@ class Game {
         for (let row = 0; row < this.GRID_ROWS; row++) {
             const rowArray = [];
             for (let col = 0; col < this.GRID_COLS; col++) {
-                const tileData = tiles[row * this.GRID_COLS + col];
+                const data = tilesData[row * this.GRID_COLS + col];
                 const tile = {
-                    char: tileData.char,
-                    traditional: tileData.traditional,
-                    isCaoshu: tileData.isCaoshu,
+                    char: data.char,
+                    traditional: data.traditional,
+                    isCaoshu: data.isCaoshu,
                     row,
                     col,
-                    matched: false,
+                    matched: !!data.matched,
                     element: null
                 };
                 
                 const element = document.createElement('div');
-                element.className = tileData.isCaoshu ? 'tile' : 'tile tile-regular';
-                element.textContent = tileData.isCaoshu ? tileData.traditional : tileData.char;
+                element.className = data.isCaoshu ? 'tile' : 'tile tile-regular';
+                element.textContent = data.isCaoshu ? data.traditional : data.char;
                 element.dataset.row = row;
                 element.dataset.col = col;
+                if (tile.matched) element.classList.add('matched');
                 element.addEventListener('click', () => this.handleTileClick(row, col));
                 
                 tile.element = element;
@@ -433,6 +425,17 @@ class Game {
                 rowArray.push(tile);
             }
             this.grid.push(rowArray);
+        }
+        
+        // 显示选中段的文字（草诀谱分段时）
+        if (this.charLevel === 4 && this.caojueSection > 0) {
+            const charsPerSection = 10;
+            const start = (this.caojueSection - 1) * charsPerSection;
+            const end = Math.min(this.caojueSection * charsPerSection, CAOJUE_CHARS.length);
+            this.selectedCharsElement.innerHTML = `<strong>第${this.caojueSection}段：</strong>${CAOJUE_CHARS.substring(start, end)}`;
+            this.selectedCharsElement.style.display = 'block';
+        } else {
+            this.selectedCharsElement.style.display = 'none';
         }
     }
     
@@ -471,24 +474,15 @@ class Game {
             const state = JSON.parse(saved);
             if (state.gridSize !== this.gridSize || state.charLevel !== this.charLevel) return false;
             if (state.charLevel === 4 && state.caojueSection !== undefined && state.caojueSection !== this.caojueSection) return false;
+            if (!Array.isArray(state.tiles) || state.tiles.length !== this.GRID_ROWS * this.GRID_COLS) return false;
             
-            this.score = state.score;
-            this.time = state.time;
+            this.score = state.score || 0;
+            this.time = state.time || 0;
             this.updateScore();
             this.updateTime();
             
-            for (let row = 0; row < this.GRID_ROWS; row++) {
-                for (let col = 0; col < this.GRID_COLS; col++) {
-                    const tileData = state.tiles[row * this.GRID_COLS + col];
-                    const tile = this.grid[row][col];
-                    if (tileData.matched) {
-                        tile.matched = true;
-                        if (tile.element) {
-                            tile.element.classList.add('matched');
-                        }
-                    }
-                }
-            }
+            // 完整还原牌面（字、简繁、草书/楷书、已消除状态）
+            this.renderGrid(state.tiles);
             return true;
         } catch (e) {
             console.warn('加载游戏失败:', e);
@@ -665,22 +659,30 @@ class Game {
         const grid = document.getElementById('grid-container');
         const gridRect = grid.getBoundingClientRect();
         
-        // 从 CSS 变量获取方块大小，而不是从 DOM 元素
         const computedStyle = getComputedStyle(grid);
         const tileSize = parseFloat(computedStyle.getPropertyValue('--tile-size')) || 60;
         const gap = parseFloat(computedStyle.gap) || 4;
-        const gridPadding = 8;
+        const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+        const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
         
-        // 动态计算实际 padding
-        const padding = (gridRect.width - this.GRID_COLS * tileSize - (this.GRID_COLS - 1) * gap) / 2;
-        
-        const gridLeftInBoard = gridRect.left - boardRect.left;
-        const gridTopInBoard = gridRect.top - boardRect.top;
+        // 棋盘内容区（不含 padding）相对 .game-board 的坐标
+        const originLeft = gridRect.left - boardRect.left + paddingLeft;
+        const originTop = gridRect.top - boardRect.top + paddingTop;
         
         const getCellCenter = (row, col) => {
-            const x = gridLeftInBoard + gridPadding + padding + col * (tileSize + gap) + tileSize / 2;
-            const y = gridTopInBoard + gridPadding + padding + row * (tileSize + gap) + tileSize / 2;
-            return { x, y };
+            const inGrid = row >= 0 && row < this.GRID_ROWS && col >= 0 && col < this.GRID_COLS;
+            if (inGrid) {
+                const rect = this.grid[row][col].element.getBoundingClientRect();
+                return {
+                    x: rect.left - boardRect.left + rect.width / 2,
+                    y: rect.top - boardRect.top + rect.height / 2
+                };
+            }
+            // 棋盘外的转折点按格子尺寸推算
+            return {
+                x: originLeft + col * (tileSize + gap) + tileSize / 2,
+                y: originTop + row * (tileSize + gap) + tileSize / 2
+            };
         };
         
         const points = [];
