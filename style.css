@@ -402,6 +402,13 @@ body {
     margin-bottom: 25px;
 }
 
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .modal-content button {
     padding: 12px 40px;
     font-size: 18px;

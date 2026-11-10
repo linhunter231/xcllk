@@ -73,6 +73,7 @@ class Game {
         this.modalTitle = document.getElementById('modal-title');
         this.modalMessage = document.getElementById('modal-message');
         this.modalRestartBtn = document.getElementById('modal-restart-btn');
+        this.modalNextSectionBtn = document.getElementById('modal-next-section-btn');
         this.selectedCharsElement = document.getElementById('selected-chars');
         
         this.init();
@@ -134,6 +135,7 @@ class Game {
             this.modal.classList.add('hidden');
             this.restart();
         });
+        this.modalNextSectionBtn.addEventListener('click', () => this.nextSection());
         
         // 等待字体加载完成后再开始游戏
         waitForFonts().then(() => {
@@ -989,6 +991,23 @@ class Game {
         this.modal.classList.remove('hidden');
         this.modalTitle.textContent = isWin ? '恭喜通关！' : '游戏结束';
         this.modalMessage.textContent = `最终得分: ${this.score}，用时: ${Math.floor(this.time / 60)}分${this.time % 60}秒`;
+        
+        // 草诀谱分段模式通关后，提供"下一段"入口
+        const totalSections = Math.ceil(CAOJUE_CHARS.length / 10);
+        const canNext = isWin && this.charLevel === 4 && this.caojueSection > 0 && this.caojueSection < totalSections;
+        this.modalNextSectionBtn.style.display = canNext ? 'inline-block' : 'none';
+    }
+    
+    nextSection() {
+        const totalSections = Math.ceil(CAOJUE_CHARS.length / 10);
+        if (this.caojueSection >= totalSections) return;
+        
+        this.caojueSection++;
+        this.caojueSectionSelect.value = this.caojueSection.toString();
+        this.modal.classList.add('hidden');
+        this.stopTimer();
+        this.clearSavedGame();
+        this.startGame();
     }
 }
 
